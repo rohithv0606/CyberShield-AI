@@ -7,10 +7,10 @@ from transformers import (
 
 
 # =========================================================
-# MODEL PATH
+# HUGGING FACE MODEL
 # =========================================================
 
-MODEL_PATH = "./ml/message_model/cybershield_distilbert"
+MODEL_PATH = "Rohithv06/cybershield_distilbert"
 
 
 # =========================================================
@@ -39,6 +39,8 @@ else:
 # LOAD TOKENIZER
 # =========================================================
 
+print("Loading CyberShield NLP tokenizer...")
+
 tokenizer = AutoTokenizer.from_pretrained(
     MODEL_PATH
 )
@@ -47,6 +49,8 @@ tokenizer = AutoTokenizer.from_pretrained(
 # =========================================================
 # LOAD DISTILBERT
 # =========================================================
+
+print("Loading CyberShield DistilBERT model...")
 
 model = AutoModelForSequenceClassification.from_pretrained(
     MODEL_PATH
@@ -62,7 +66,7 @@ model.to(device)
 model.eval()
 
 
-print("DistilBERT loaded successfully!")
+print("CyberShield DistilBERT loaded successfully!")
 
 
 # =========================================================

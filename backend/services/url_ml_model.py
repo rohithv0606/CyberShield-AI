@@ -1,19 +1,32 @@
 import joblib
 import pandas as pd
-import os
+
+from huggingface_hub import hf_hub_download
 
 
 # =========================================================
-# LOAD MODEL
+# HUGGING FACE MODEL
 # =========================================================
 
-MODEL_PATH = "ml/models/cybershield_url_model.joblib"
+REPO_ID = "Rohithv06/cybershield-url-model"
+
+MODEL_FILE = "cybershield_url_model.joblib"
+
+
+# =========================================================
+# DOWNLOAD / LOAD MODEL
+# =========================================================
 
 print("Loading CyberShield URL ML model...")
 
+MODEL_PATH = hf_hub_download(
+    repo_id=REPO_ID,
+    filename=MODEL_FILE
+)
+
 model = joblib.load(MODEL_PATH)
 
-print("URL Random Forest loaded successfully!")
+print("CyberShield URL Random Forest loaded successfully!")
 
 
 # =========================================================
@@ -39,8 +52,11 @@ def predict_url(features: dict):
     phishing_probability = probabilities[1]
 
     if prediction == 1:
+
         classification = "PHISHING"
+
     else:
+
         classification = "LEGITIMATE"
 
     return {
@@ -50,11 +66,13 @@ def predict_url(features: dict):
         "prediction": int(prediction),
 
         "phishing_probability": round(
-            float(phishing_probability), 4
+            float(phishing_probability),
+            4
         ),
 
         "legitimate_probability": round(
-            float(legitimate_probability), 4
+            float(legitimate_probability),
+            4
         ),
 
         "features": features
