@@ -1,0 +1,15 @@
+import pandas as pd
+DATASET_PATH = "ml/dataset/PhiUSIIL_Phishing_URL_Dataset.csv"
+df = pd.read_csv(DATASET_PATH)
+print("\n===== DATASET SHAPE =====")
+print(df.shape)
+print("\n===== COLUMNS =====")
+print(df.columns.tolist())
+print("\n===== FIRST 5 ROWS =====")
+print(df.head())
+print("\n===== DATA TYPES =====")
+print(df.dtypes)
+print("\n===== MISSING VALUES =====")
+print(df.isnull().sum())
+print("\n===== DATASET INFO =====")
+print(df.info())
