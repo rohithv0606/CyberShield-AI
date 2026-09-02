@@ -1,129 +1,65 @@
 import joblib
 import pandas as pd
-from pathlib import Path
 
-from backend.services.url_feature_extractor import extract_url_features
-
-
-# =========================================================
-# MODEL PATH
-# =========================================================
-
-MODEL_PATH = Path("ml/models/cybershield_url_model.joblib")
+from huggingface_hub import hf_hub_download
 
 
 # =========================================================
-# LOAD MODEL
+# HUGGING FACE MODEL
 # =========================================================
 
-print("Loading CyberShield URL ML model...")
+REPO_ID = "Rohithv06/cybershield-url-model"
+
+MODEL_FILE = "cybershield_url_model.joblib"
+
+
+# =========================================================
+# DOWNLOAD / LOAD MODEL
+# =========================================================
+
+print("Loading CyberShield URL ML model from Hugging Face...")
+
+MODEL_PATH = hf_hub_download(
+    repo_id=REPO_ID,
+    filename=MODEL_FILE
+)
 
 model = joblib.load(MODEL_PATH)
 
-print("URL Random Forest loaded successfully!")
-
-print("Model classes:", model.classes_)
-
-
-# =========================================================
-# FEATURE ORDER
-# =========================================================
-
-FEATURE_COLUMNS = [
-
-    "URLLength",
-    "DomainLength",
-    "IsDomainIP",
-    "TLDLength",
-    "NoOfSubDomain",
-    "HasObfuscation",
-    "NoOfObfuscatedChar",
-    "ObfuscationRatio",
-    "NoOfLettersInURL",
-    "NoOfDegitsInURL",
-    "NoOfEqualsInURL",
-    "NoOfQMarkInURL",
-    "NoOfAmpersandInURL",
-    "NoOfOtherSpecialCharsInURL"
-
-]
+print("CyberShield URL Random Forest loaded successfully!")
 
 
 # =========================================================
 # URL PREDICTION
 # =========================================================
 
-def predict_url(url: str):
+def predict_url(features: dict):
 
-    # ---------------------------------------------
-    # Extract ML features
-    # ---------------------------------------------
+    # Convert dictionary into DataFrame
+    df = pd.DataFrame([features])
 
-    features = extract_url_features(url)
+    # Prediction
+    prediction = model.predict(df)[0]
 
+    # Probability
+    probabilities = model.predict_proba(df)[0]
 
-    # ---------------------------------------------
-    # Create DataFrame
-    # ---------------------------------------------
+    # 0 = legitimate
+    # 1 = phishing
 
-    X = pd.DataFrame(
-        [features],
-        columns=FEATURE_COLUMNS
-    )
+    legitimate_probability = probabilities[0]
+    phishing_probability = probabilities[1]
 
-
-    # ---------------------------------------------
-    # Model prediction
-    # ---------------------------------------------
-
-    prediction = int(model.predict(X)[0])
-
-
-    # ---------------------------------------------
-    # Get probabilities
-    # ---------------------------------------------
-
-    probabilities = model.predict_proba(X)[0]
-
-
-    # =====================================================
-    # IMPORTANT:
-    #
-    # Your model uses:
-    #
-    # 0 = PHISHING
-    # 1 = LEGITIMATE
-    #
-    # model.classes_ = [0, 1]
-    # =====================================================
-
-    phishing_probability = probabilities[0]
-
-    legitimate_probability = probabilities[1]
-
-
-    # ---------------------------------------------
-    # Classification
-    # ---------------------------------------------
-
-    if prediction == 0:
-
+    if prediction == 1:
         classification = "PHISHING"
-
     else:
-
         classification = "LEGITIMATE"
-
-
-    # ---------------------------------------------
-    # Return result
-    # ---------------------------------------------
 
     return {
 
         "classification": classification,
 
-        "prediction": prediction,
+        "prediction": int(prediction),
 
         "phishing_probability": round(
             float(phishing_probability),
@@ -136,5 +72,4 @@ def predict_url(url: str):
         ),
 
         "features": features
-
     }
