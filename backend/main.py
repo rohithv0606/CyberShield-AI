@@ -99,7 +99,7 @@ def scan_url(request: URLRequest):
     # =====================================================
 
     ml_analysis = predict_url(
-        request.url
+        features
     )
 
 
