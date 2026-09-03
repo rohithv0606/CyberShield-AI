@@ -17,56 +17,69 @@ MODEL_PATH = "Rohithv06/cybershield_distilbert"
 # DEVICE
 # =========================================================
 
-if torch.cuda.is_available():
+device = torch.device("cpu")
 
-    device = torch.device("cuda")
+
+# =========================================================
+# MODEL VARIABLES
+# =========================================================
+
+tokenizer = None
+model = None
+
+
+# =========================================================
+# LOAD MODEL
+# =========================================================
+
+def load_model():
+
+    global tokenizer
+    global model
+
+    # -----------------------------------------
+    # Prevent loading multiple times
+    # -----------------------------------------
+
+    if model is not None:
+
+        return
+
 
     print("======================================")
-    print("CyberShield NLP using GPU")
-    print("GPU:", torch.cuda.get_device_name(0))
-    print("======================================")
-
-else:
-
-    device = torch.device("cpu")
-
-    print("======================================")
-    print("CyberShield NLP using CPU")
+    print("Loading CyberShield NLP model...")
+    print("Device: CPU")
     print("======================================")
 
 
-# =========================================================
-# LOAD TOKENIZER
-# =========================================================
+    # -----------------------------------------
+    # Load tokenizer
+    # -----------------------------------------
 
-print("Loading CyberShield NLP tokenizer...")
-
-tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_PATH
-)
+    tokenizer = AutoTokenizer.from_pretrained(
+        MODEL_PATH
+    )
 
 
-# =========================================================
-# LOAD DISTILBERT
-# =========================================================
+    # -----------------------------------------
+    # Load model
+    # -----------------------------------------
 
-print("Loading CyberShield DistilBERT model...")
-
-model = AutoModelForSequenceClassification.from_pretrained(
-    MODEL_PATH
-)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        MODEL_PATH
+    )
 
 
-# =========================================================
-# MOVE MODEL TO DEVICE
-# =========================================================
+    # -----------------------------------------
+    # CPU
+    # -----------------------------------------
 
-model.to(device)
+    model.to(device)
 
-model.eval()
+    model.eval()
 
 
-print("CyberShield DistilBERT loaded successfully!")
+    print("CyberShield DistilBERT loaded successfully!")
 
 
 # =========================================================
@@ -75,9 +88,16 @@ print("CyberShield DistilBERT loaded successfully!")
 
 def predict_message(message: str):
 
-    # -----------------------------------------------------
-    # TOKENIZE
-    # -----------------------------------------------------
+    # -----------------------------------------
+    # Load model only when required
+    # -----------------------------------------
+
+    load_model()
+
+
+    # -----------------------------------------
+    # Tokenize
+    # -----------------------------------------
 
     inputs = tokenizer(
         message,
@@ -87,9 +107,9 @@ def predict_message(message: str):
     )
 
 
-    # -----------------------------------------------------
-    # MOVE INPUT TO DEVICE
-    # -----------------------------------------------------
+    # -----------------------------------------
+    # Move inputs to CPU
+    # -----------------------------------------
 
     inputs = {
         key: value.to(device)
@@ -97,18 +117,18 @@ def predict_message(message: str):
     }
 
 
-    # -----------------------------------------------------
-    # MODEL PREDICTION
-    # -----------------------------------------------------
+    # -----------------------------------------
+    # Prediction
+    # -----------------------------------------
 
     with torch.no_grad():
 
         outputs = model(**inputs)
 
 
-    # -----------------------------------------------------
-    # CONVERT LOGITS TO PROBABILITIES
-    # -----------------------------------------------------
+    # -----------------------------------------
+    # Probabilities
+    # -----------------------------------------
 
     probabilities = torch.softmax(
         outputs.logits,
@@ -116,12 +136,10 @@ def predict_message(message: str):
     )
 
 
-    # =====================================================
-    # MODEL LABEL ASSUMPTION
-    #
-    # 0 = LEGITIMATE
-    # 1 = PHISHING
-    # =====================================================
+    # -----------------------------------------
+    # 0 = legitimate
+    # 1 = phishing
+    # -----------------------------------------
 
     legitimate_probability = (
         probabilities[0][0].item()
@@ -132,9 +150,9 @@ def predict_message(message: str):
     )
 
 
-    # -----------------------------------------------------
-    # PREDICTION
-    # -----------------------------------------------------
+    # -----------------------------------------
+    # Prediction
+    # -----------------------------------------
 
     prediction = torch.argmax(
         probabilities,
@@ -142,9 +160,9 @@ def predict_message(message: str):
     ).item()
 
 
-    # -----------------------------------------------------
-    # CLASSIFICATION
-    # -----------------------------------------------------
+    # -----------------------------------------
+    # Classification
+    # -----------------------------------------
 
     if prediction == 1:
 
@@ -157,9 +175,9 @@ def predict_message(message: str):
         classification = "LEGITIMATE"
 
 
-    # -----------------------------------------------------
-    # RETURN
-    # -----------------------------------------------------
+    # -----------------------------------------
+    # Return
+    # -----------------------------------------
 
     return {
 
