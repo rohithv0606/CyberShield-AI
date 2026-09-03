@@ -30,30 +30,101 @@ print("CyberShield URL Random Forest loaded successfully!")
 
 
 # =========================================================
+# SHOW EXPECTED FEATURES
+# =========================================================
+
+EXPECTED_FEATURES = list(model.feature_names_in_)
+
+print("======================================")
+print("MODEL EXPECTS THESE FEATURES:")
+print("======================================")
+
+for feature in EXPECTED_FEATURES:
+    print(feature)
+
+print("======================================")
+
+
+# =========================================================
 # URL PREDICTION
 # =========================================================
 
 def predict_url(features: dict):
 
-    # Convert dictionary into DataFrame
-    df = pd.DataFrame([features])
+    # -----------------------------------------------------
+    # Check features
+    # -----------------------------------------------------
 
+    missing_features = [
+        feature
+        for feature in EXPECTED_FEATURES
+        if feature not in features
+    ]
+
+    if missing_features:
+
+        raise ValueError(
+            f"URL analyzer is missing model features: "
+            f"{missing_features}"
+        )
+
+
+    # -----------------------------------------------------
+    # Keep ONLY features used during training
+    # AND keep them in the exact same order
+    # -----------------------------------------------------
+
+    model_features = {
+        feature: features[feature]
+        for feature in EXPECTED_FEATURES
+    }
+
+
+    # -----------------------------------------------------
+    # DataFrame
+    # -----------------------------------------------------
+
+    df = pd.DataFrame(
+        [model_features],
+        columns=EXPECTED_FEATURES
+    )
+
+
+    # -----------------------------------------------------
     # Prediction
+    # -----------------------------------------------------
+
     prediction = model.predict(df)[0]
 
+
+    # -----------------------------------------------------
     # Probability
+    # -----------------------------------------------------
+
     probabilities = model.predict_proba(df)[0]
 
-    # 0 = legitimate
-    # 1 = phishing
 
     legitimate_probability = probabilities[0]
+
     phishing_probability = probabilities[1]
 
+
+    # -----------------------------------------------------
+    # Classification
+    # -----------------------------------------------------
+
     if prediction == 1:
+
         classification = "PHISHING"
+
     else:
+
         classification = "LEGITIMATE"
+
+
+    # -----------------------------------------------------
+    # RETURN
+    # -----------------------------------------------------
 
     return {
 
@@ -71,5 +142,6 @@ def predict_url(features: dict):
             4
         ),
 
-        "features": features
+        "features": model_features
+
     }

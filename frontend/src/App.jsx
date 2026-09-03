@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "https://cybershield-ai-yhzr.onrender.com";
 
 function ShieldIcon() {
   return (
@@ -89,6 +89,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // =====================================================
+  // SCAN
+  // =====================================================
+
   const handleScan = async () => {
     if (!input.trim()) {
       setError(
@@ -104,16 +108,25 @@ function App() {
     setResult(null);
 
     try {
+      // Select backend endpoint
       const endpoint =
         scanType === "url"
           ? `${API_URL}/scan/url`
           : `${API_URL}/scan/message`;
 
+      // Prepare request body
       const body =
         scanType === "url"
           ? { url: input.trim() }
           : { message: input.trim() };
 
+      console.log("=================================");
+      console.log("CyberShield Scan");
+      console.log("Endpoint:", endpoint);
+      console.log("Request:", body);
+      console.log("=================================");
+
+      // Send request
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -122,22 +135,43 @@ function App() {
         body: JSON.stringify(body),
       });
 
+      // Read response as text first
+      const responseText = await response.text();
+
+      console.log("Backend Status:", response.status);
+      console.log("Backend Response:", responseText);
+
+      // Backend returned an error
       if (!response.ok) {
-        throw new Error(`Server returned ${response.status}`);
+        throw new Error(
+          `Server returned ${response.status}: ${responseText}`
+        );
       }
 
-      const data = await response.json();
+      // Convert response to JSON
+      const data = JSON.parse(responseText);
+
+      console.log("CyberShield Result:", data);
+
+      // Store result
       setResult(data);
+
     } catch (err) {
-      console.error(err);
+      console.error("CyberShield Error:", err);
 
       setError(
-        "Unable to connect to CyberShield backend. Make sure FastAPI is running on port 8000."
+        err.message ||
+          "Unable to connect to CyberShield backend."
       );
+
     } finally {
       setLoading(false);
     }
   };
+
+  // =====================================================
+  // CLEAR RESULT
+  // =====================================================
 
   const clearResult = () => {
     setInput("");
@@ -145,10 +179,18 @@ function App() {
     setError("");
   };
 
+  // =====================================================
+  // EXTRACT BACKEND DATA
+  // =====================================================
+
   const fusion = result?.risk_fusion;
   const explanation = result?.explanation;
   const ml = result?.ml_analysis;
   const rule = result?.rule_analysis;
+
+  // =====================================================
+  // RISK SCORE
+  // =====================================================
 
   const riskScore = Number(
     fusion?.final_risk_score ??
@@ -163,6 +205,10 @@ function App() {
       ? "suspicious"
       : "low";
 
+  // =====================================================
+  // ML PROBABILITIES
+  // =====================================================
+
   const phishingProbability = Number(
     ml?.phishing_probability ?? 0
   );
@@ -170,6 +216,10 @@ function App() {
   const legitimateProbability = Number(
     ml?.legitimate_probability ?? 0
   );
+
+  // =====================================================
+  // CONTRIBUTIONS
+  // =====================================================
 
   const mlContribution = Number(
     explanation?.contribution?.ml_contribution ?? 0
@@ -179,11 +229,23 @@ function App() {
     explanation?.contribution?.rule_contribution ?? 0
   );
 
+  // =====================================================
+  // EVIDENCE
+  // =====================================================
+
   const evidence = explanation?.evidence || [];
+
+  // =====================================================
+  // SEVERITY CLASS
+  // =====================================================
 
   const getSeverityClass = (severity) => {
     return String(severity || "low").toLowerCase();
   };
+
+  // =====================================================
+  // SIGNAL ICON
+  // =====================================================
 
   const getSignalIcon = (signal) => {
     const value = String(signal || "").toLowerCase();
@@ -206,7 +268,9 @@ function App() {
       ===================================================== */}
 
       <header className="navbar">
+
         <div className="brand">
+
           <div className="brand-icon">
             <ShieldIcon />
           </div>
@@ -220,16 +284,23 @@ function App() {
               INTELLIGENT THREAT DETECTION
             </div>
           </div>
+
         </div>
 
         <div className="system-status">
           <span className="status-dot"></span>
           SYSTEM ONLINE
         </div>
+
       </header>
 
 
+      {/* =====================================================
+          MAIN
+      ===================================================== */}
+
       <main className="main-container">
+
 
         {/* =====================================================
             HERO
@@ -249,9 +320,9 @@ function App() {
           </h1>
 
           <p>
-            CyberShield combines machine learning, rule-based analysis,
-            risk fusion and explainable AI to identify phishing and
-            social engineering threats.
+            CyberShield combines machine learning, rule-based
+            analysis, risk fusion and explainable AI to identify
+            phishing and social engineering threats.
           </p>
 
         </section>
@@ -266,6 +337,7 @@ function App() {
           <div className="scanner-header">
 
             <div>
+
               <div className="eyebrow">
                 THREAT ANALYSIS
               </div>
@@ -275,9 +347,10 @@ function App() {
               </h2>
 
               <p>
-                Analyze a URL or message for malicious and suspicious
-                behavior.
+                Analyze a URL or message for malicious and
+                suspicious behavior.
               </p>
+
             </div>
 
             <div className="scanner-status">
@@ -288,7 +361,9 @@ function App() {
           </div>
 
 
-          {/* TABS */}
+          {/* =================================================
+              TABS
+          ================================================= */}
 
           <div className="scanner-tabs">
 
@@ -302,6 +377,7 @@ function App() {
                 setScanType("url");
                 setResult(null);
                 setError("");
+                setInput("");
               }}
             >
               <span>↗</span>
@@ -319,6 +395,7 @@ function App() {
                 setScanType("message");
                 setResult(null);
                 setError("");
+                setInput("");
               }}
             >
               <span>✉</span>
@@ -328,7 +405,9 @@ function App() {
           </div>
 
 
-          {/* INPUT */}
+          {/* =================================================
+              INPUT
+          ================================================= */}
 
           <div className="input-area">
 
@@ -380,10 +459,19 @@ function App() {
           </div>
 
 
+          {/* =================================================
+              ERROR
+          ================================================= */}
+
           {error && (
             <div className="error-box">
+
               <span>!</span>
-              {error}
+
+              <div>
+                {error}
+              </div>
+
             </div>
           )}
 
@@ -398,9 +486,15 @@ function App() {
 
           <section className="results-section">
 
+
+            {/* =================================================
+                RESULTS HEADER
+            ================================================= */}
+
             <div className="results-heading">
 
               <div>
+
                 <span className="section-label">
                   ANALYSIS COMPLETE
                 </span>
@@ -408,6 +502,7 @@ function App() {
                 <h2>
                   Security Assessment
                 </h2>
+
               </div>
 
               <button
@@ -426,7 +521,8 @@ function App() {
 
             <div className="risk-grid">
 
-              {/* RISK */}
+
+              {/* RISK CARD */}
 
               <div className={`risk-card ${riskClass}`}>
 
@@ -454,6 +550,7 @@ function App() {
 
 
                 <div className="risk-progress">
+
                   <div
                     style={{
                       width: `${Math.min(
@@ -462,6 +559,7 @@ function App() {
                       )}%`,
                     }}
                   />
+
                 </div>
 
 
@@ -474,16 +572,20 @@ function App() {
               </div>
 
 
-              {/* ML */}
+              {/* ML CARD */}
 
               <div className="metric-card">
 
                 <div className="metric-header">
-                  <span>ML ANALYSIS</span>
+
+                  <span>
+                    ML ANALYSIS
+                  </span>
 
                   <span className="metric-icon">
                     <BrainIcon />
                   </span>
+
                 </div>
 
                 <div className="metric-value">
@@ -495,6 +597,7 @@ function App() {
                 </div>
 
                 <div className="mini-progress">
+
                   <div
                     style={{
                       width: `${Math.min(
@@ -503,6 +606,7 @@ function App() {
                       )}%`,
                     }}
                   />
+
                 </div>
 
                 <div className="metric-description">
@@ -512,16 +616,20 @@ function App() {
               </div>
 
 
-              {/* RULE */}
+              {/* RULE CARD */}
 
               <div className="metric-card">
 
                 <div className="metric-header">
-                  <span>RULE ANALYSIS</span>
+
+                  <span>
+                    RULE ANALYSIS
+                  </span>
 
                   <span className="metric-icon">
                     <RiskIcon />
                   </span>
+
                 </div>
 
                 <div className="metric-value">
@@ -533,6 +641,7 @@ function App() {
                 </div>
 
                 <div className="mini-progress">
+
                   <div
                     style={{
                       width: `${Math.min(
@@ -541,6 +650,7 @@ function App() {
                       )}%`,
                     }}
                   />
+
                 </div>
 
                 <div className="metric-description">
@@ -563,6 +673,7 @@ function App() {
                 <div className="intelligence-header">
 
                   <div>
+
                     <span className="section-label">
                       MESSAGE INTELLIGENCE
                     </span>
@@ -572,9 +683,10 @@ function App() {
                     </h2>
 
                     <p>
-                      Key indicators identified by the CyberShield
-                      analysis pipeline.
+                      Key indicators identified by the
+                      CyberShield analysis pipeline.
                     </p>
+
                   </div>
 
                   <div className="intelligence-badge">
@@ -600,7 +712,10 @@ function App() {
                         <div className="signal-chip-top">
 
                           <span className="signal-index">
-                            {String(index + 1).padStart(2, "0")}
+                            {String(index + 1).padStart(
+                              2,
+                              "0"
+                            )}
                           </span>
 
                           <span
@@ -613,17 +728,21 @@ function App() {
 
                         </div>
 
+
                         <div className="signal-icon-box">
                           {getSignalIcon(item.signal)}
                         </div>
+
 
                         <strong>
                           {item.signal}
                         </strong>
 
+
                         <p>
                           {item.explanation}
                         </p>
+
 
                         {item.detected &&
                           item.detected.length > 0 && (
@@ -632,9 +751,11 @@ function App() {
 
                               {item.detected.map(
                                 (word, wordIndex) => (
+
                                   <span key={wordIndex}>
                                     {word}
                                   </span>
+
                                 )
                               )}
 
@@ -669,6 +790,9 @@ function App() {
 
               <div className="xai-card">
 
+
+                {/* XAI HEADER */}
+
                 <div className="xai-header">
 
                   <div>
@@ -682,8 +806,8 @@ function App() {
                     </h2>
 
                     <p className="xai-subtitle">
-                      Transparent reasoning from the detection
-                      pipeline.
+                      Transparent reasoning from the
+                      detection pipeline.
                     </p>
 
                   </div>
@@ -696,7 +820,9 @@ function App() {
                 </div>
 
 
-                {/* SUMMARY */}
+                {/* =================================================
+                    SUMMARY
+                ================================================= */}
 
                 <div className="xai-summary">
 
@@ -719,7 +845,9 @@ function App() {
                 </div>
 
 
-                {/* THREAT CHAIN */}
+                {/* =================================================
+                    THREAT CHAIN
+                ================================================= */}
 
                 <div className="threat-chain">
 
@@ -729,68 +857,101 @@ function App() {
 
                   <div className="chain-container">
 
+
                     <div className="chain-node">
+
                       <span>01</span>
+
                       INPUT
+
                       <small>
                         Message received
                       </small>
+
                     </div>
+
 
                     <div className="chain-arrow">
                       →
                     </div>
 
+
                     <div className="chain-node">
+
                       <span>02</span>
+
                       SIGNALS
+
                       <small>
                         Threat indicators
                       </small>
+
                     </div>
+
 
                     <div className="chain-arrow">
                       →
                     </div>
 
+
                     <div className="chain-node">
+
                       <span>03</span>
+
                       ML MODEL
+
                       <small>
                         DistilBERT analysis
                       </small>
+
                     </div>
+
 
                     <div className="chain-arrow">
                       →
                     </div>
 
+
                     <div className="chain-node">
+
                       <span>04</span>
+
                       RISK FUSION
+
                       <small>
                         Combined assessment
                       </small>
+
                     </div>
+
 
                     <div className="chain-arrow">
                       →
                     </div>
 
+
                     <div className="chain-node final">
+
                       <span>05</span>
+
                       DECISION
+
                       <small>
-                        {fusion?.classification || "UNKNOWN"}
+                        {fusion?.classification ||
+                          "UNKNOWN"}
                       </small>
+
                     </div>
+
 
                   </div>
 
                 </div>
 
 
-                {/* SIGNAL ANALYSIS */}
+                {/* =================================================
+                    SIGNAL ANALYSIS
+                ================================================= */}
 
                 <div className="signal-box">
 
@@ -823,7 +984,11 @@ function App() {
                     Risk contribution
                   </div>
 
+
                   <div className="contribution-bars">
+
+
+                    {/* ML */}
 
                     <div className="contribution-row">
 
@@ -838,6 +1003,7 @@ function App() {
                         </strong>
 
                       </div>
+
 
                       <div className="contribution-track">
 
@@ -856,6 +1022,8 @@ function App() {
                     </div>
 
 
+                    {/* RULE */}
+
                     <div className="contribution-row">
 
                       <div className="contribution-info">
@@ -869,6 +1037,7 @@ function App() {
                         </strong>
 
                       </div>
+
 
                       <div className="contribution-track">
 
@@ -886,12 +1055,15 @@ function App() {
 
                     </div>
 
+
                   </div>
 
                 </div>
 
 
-                {/* EVIDENCE */}
+                {/* =================================================
+                    EVIDENCE
+                ================================================= */}
 
                 {evidence.length > 0 && (
 
@@ -900,6 +1072,7 @@ function App() {
                     <div className="subsection-title">
                       DETECTED EVIDENCE
                     </div>
+
 
                     <div className="evidence-list">
 
@@ -919,12 +1092,14 @@ function App() {
                               {item.severity}
                             </div>
 
+
                             <div className="evidence-number">
                               {String(index + 1).padStart(
                                 2,
                                 "0"
                               )}
                             </div>
+
 
                             <div className="evidence-content">
 
@@ -940,6 +1115,7 @@ function App() {
 
                               </div>
 
+
                               <p>
                                 {item.explanation}
                               </p>
@@ -952,9 +1128,11 @@ function App() {
 
                                     {item.detected.map(
                                       (word, wordIndex) => (
+
                                         <span key={wordIndex}>
                                           {word}
                                         </span>
+
                                       )
                                     )}
 
@@ -976,7 +1154,9 @@ function App() {
                 )}
 
 
-                {/* ML EXPLANATION */}
+                {/* =================================================
+                    ML EXPLANATION
+                ================================================= */}
 
                 {explanation.ml_explanation?.length > 0 && (
 
@@ -986,15 +1166,18 @@ function App() {
                       MACHINE LEARNING EXPLANATION
                     </div>
 
+
                     {explanation.ml_explanation.map(
                       (text, index) => (
 
                         <p key={index}>
+
                           <span className="bullet">
                             •
                           </span>
 
                           {text}
+
                         </p>
 
                       )
@@ -1041,7 +1224,9 @@ function App() {
                 )}
 
 
-                {/* RULE EXPLANATION */}
+                {/* =================================================
+                    RULE EXPLANATION
+                ================================================= */}
 
                 {explanation.rule_explanation?.length > 0 && (
 
@@ -1051,15 +1236,18 @@ function App() {
                       RULE-BASED EXPLANATION
                     </div>
 
+
                     {explanation.rule_explanation.map(
                       (text, index) => (
 
                         <p key={index}>
+
                           <span className="bullet">
                             •
                           </span>
 
                           {text}
+
                         </p>
 
                       )
@@ -1070,7 +1258,9 @@ function App() {
                 )}
 
 
-                {/* RECOMMENDATION */}
+                {/* =================================================
+                    RECOMMENDATION
+                ================================================= */}
 
                 <div className="recommendation">
 
@@ -1122,6 +1312,7 @@ function App() {
 
             </details>
 
+
           </section>
 
         )}
@@ -1134,10 +1325,13 @@ function App() {
         <footer>
 
           <div className="footer-brand">
+
             <ShieldIcon />
+
             <span>
               CyberShield AI
             </span>
+
           </div>
 
           <span>
@@ -1145,6 +1339,7 @@ function App() {
           </span>
 
         </footer>
+
 
       </main>
 
